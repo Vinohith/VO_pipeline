@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation as R
 
 poses = []
 traj_file = np.loadtxt("trajectory.txt")
-for traj in traj_file[:3]:
+for traj in traj_file:
 	Twr = np.eye(4)
 	Twr[:3, :3] = R.from_quat(traj[-4:]).as_matrix()
 	Twr[:3, 3] = traj[1:4].T
@@ -14,13 +14,15 @@ poses = np.array(poses)
 print(len(poses))
 # print(poses)
 
-for pose in poses:
-	print(pose)
-	Ow = pose[:3, 3]
-	Xw = 0.1*pose[:3, :3].dot(np.array([1, 0, 0]).T)
-	Yw = 0.1*pose[:3, :3].dot(np.array([0, 1, 0]).T)
-	Zw = 0.1*pose[:3, :3].dot(np.array([0, 0, 1]).T)
-	print(Ow, Xw, Yw, Zw)
+# for pose in poses:
+# 	print("******** : ")
+# 	print(np.linalg.inv(pose))
+# 	print(pose)
+# 	Ow = pose[:3, 3]
+# 	Xw = 0.1*pose[:3, :3].dot(np.array([1, 0, 0]).T) + Ow
+# 	Yw = 0.1*pose[:3, :3].dot(np.array([0, 1, 0]).T) + Ow
+# 	Zw = 0.1*pose[:3, :3].dot(np.array([0, 0, 1]).T) + Ow
+# 	print(Ow, Xw, Yw, Zw)
 
 pangolin.CreateWindowAndBind("Trajectory Viewer", 1024, 768)
 gl.glEnable(gl.GL_DEPTH_TEST)
@@ -41,15 +43,12 @@ while not pangolin.ShouldQuit():
 	gl.glClearColor(1.0, 1.0, 1.0, 1.0)
 	dcam.Activate(scam)
 	gl.glLineWidth(2)
-	# Ow = np.array([0.0, 0.0, 0.0]).T
+	Ow = np.array([0.0, 0.0, 0.0]).T
 	for pose in poses:
-		# Ow = pose[:3, :3].dot(Ow) + pose[:3, 3]
 		Ow = pose[:3, 3]
-		Xw = pose[:3, :3].dot(np.array([0.1, 0, 0]).T)
-		Yw = pose[:3, :3].dot(np.array([0, 0.1, 0]).T)
-		Zw = pose[:3, :3].dot(np.array([0, 0, 0.1]).T)
-		# print(Ow, Xw, Yw, Zw)
-		# print(Ow)
+		Xw = pose[:3, :3].dot(np.array([0.1, 0, 0]).T) + Ow
+		Yw = pose[:3, :3].dot(np.array([0, 0.1, 0]).T) + Ow
+		Zw = pose[:3, :3].dot(np.array([0, 0, 0.1]).T) + Ow
 		gl.glBegin(gl.GL_LINES)
 		gl.glColor3f(1.0, 0.0, 0.0)
 		gl.glVertex3d(Ow[0], Ow[1], Ow[2])
@@ -61,5 +60,4 @@ while not pangolin.ShouldQuit():
 		gl.glVertex3d(Ow[0], Ow[1], Ow[2])
 		gl.glVertex3d(Zw[0], Zw[1], Zw[2])
 		gl.glEnd()
-		# pangolin.DrawCamera(pose)
 	pangolin.FinishFrame()
