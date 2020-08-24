@@ -29,19 +29,30 @@ class VisualOdometry:
 
 
     def process_image(self, current_frame, frame_id):
+        # print("*********************")
+        # print(self.R)
+        # print(self.t)
+        # print("*********************")
         self.current_frame = current_frame
         if self.frame_number == 0:
             self.current_keypoints, self.current_des = self.get_keypoints()
+            # img2 = cv2.drawKeypoints(self.current_frame, self.current_keypoints, None)
+            # cv2.imshow('keypoints', img2)
+            # cv2.waitKey(0)
             self.frame_number = 1
 
         elif self.frame_number == 1:
             self.current_keypoints, self.current_des = self.get_keypoints()
             kp1, kp2 = self.find_matches()
+            # img2 = cv2.drawMatches(self.prev_frame, self.prev_keypoints, self.current_frame, self.current_keypoints, self.matches[:100], None, flags=2)
+            # cv2.imshow('keypoints', img2)
+            # cv2.waitKey(0)
             E, mask = cv2.findEssentialMat(kp2, kp1, self.focal, self.projection_center, cv2.RANSAC)
             _, rot, trans, mask = cv2.recoverPose(E, kp2, kp1, focal = self.focal, pp = self.projection_center)
             scale = self.get_absolute_scale(frame_id)
-            self.t = self.t + scale * self.R.dot(trans)
             self.R = rot.dot(self.R)
+            self.t = self.t + scale * self.R.dot(trans)
+            # self.R = rot.dot(self.R)
 
         self.prev_frame = self.current_frame
         self.prev_keypoints = self.current_keypoints
