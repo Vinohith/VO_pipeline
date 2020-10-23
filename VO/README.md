@@ -13,6 +13,18 @@ This project is an implementation of a simple Visual Odometry pipeline.
 * [pangolin](https://github.com/uoip/pangolin) for visualization
 
 
+## Environment setup
+
+* Create the environment from the `environment.yml` file:
+```
+conda env create -f environment.yml
+```
+* Installation
+```
+python setup.py install
+```
+
+
 
 ## Usage
 
