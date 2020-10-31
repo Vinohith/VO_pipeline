@@ -15,7 +15,7 @@ using namespace std;
 
 int main() {
   double PIXEL_NOISE = 1;
-  double OUTLIER_RATIO = 0.;
+  // double OUTLIER_RATIO = 0.;
   bool ROBUST_KERNEL = true;
 
   g2o::SparseOptimizer optimizer;
@@ -89,19 +89,12 @@ int main() {
     }
     if (num_obs >= 2) {
       optimizer.addVertex(v_p);
-      bool inlier = true;
+      // bool inlier = true;
       for (size_t j = 0; j < true_poses.size(); ++j) {
         Vector2d z =
             cam_params->cam_map(true_poses.at(j).map(true_points.at(i)));
 
         if (z[0] >= 0 && z[1] >= 0 && z[0] < 640 && z[1] < 480) {
-          double sam = g2o::Sampler::uniformRand(0., 1.);
-          if (sam < OUTLIER_RATIO) {
-            // z = Vector2d(Sample::uniform(0, 640), Sample::uniform(0, 480));
-            z = Vector2d(g2o::Sampler::uniformRand(0, 640),
-                         g2o::Sampler::uniformRand(0, 480));
-            inlier = false;
-          }
           z += Vector2d(g2o::Sampler::gaussRand(0., PIXEL_NOISE),
                         g2o::Sampler::gaussRand(0., PIXEL_NOISE));
           g2o::EdgeProjectXYZ2UV *e = new g2o::EdgeProjectXYZ2UV();
@@ -116,13 +109,6 @@ int main() {
           optimizer.addEdge(e);
         }
       }
-
-      if (inlier) {
-        inliers.insert(point_id);
-        Vector3d diff = v_p->estimate() - true_points[i];
-
-        sum_diff2 += diff.dot(diff);
-      }
       pointid_2_trueid.insert(make_pair(point_id, i));
       ++point_id;
       ++point_num;
@@ -133,33 +119,5 @@ int main() {
   optimizer.setVerbose(true);
   cout << "Performing full BA:" << endl;
   optimizer.optimize(10);
-  cout << endl;
-  cout << "Point error before optimisation (inliers only): "
-       << sqrt(sum_diff2 / inliers.size()) << endl;
-  cout << inliers.size() << endl;
-  point_num = 0;
-  sum_diff2 = 0;
-  for (unordered_map<int, int>::iterator it = pointid_2_trueid.begin();
-       it != pointid_2_trueid.end(); ++it) {
-    g2o::HyperGraph::VertexIDMap::iterator v_it =
-        optimizer.vertices().find(it->first);
-    if (v_it == optimizer.vertices().end()) {
-      cerr << "Vertex " << it->first << " not in graph!" << endl;
-      exit(-1);
-    }
-    g2o::VertexSBAPointXYZ *v_p =
-        dynamic_cast<g2o::VertexSBAPointXYZ *>(v_it->second);
-    if (v_p == 0) {
-      cerr << "Vertex " << it->first << "is not a PointXYZ!" << endl;
-      exit(-1);
-    }
-    Vector3d diff = v_p->estimate() - true_points[it->second];
-    if (inliers.find(it->first) == inliers.end())
-      continue;
-    sum_diff2 += diff.dot(diff);
-    ++point_num;
-  }
-  cout << "Point error after optimisation (inliers only): "
-       << sqrt(sum_diff2 / inliers.size()) << endl;
   cout << endl;
 }

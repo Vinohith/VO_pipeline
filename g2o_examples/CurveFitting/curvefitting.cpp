@@ -54,16 +54,13 @@ int main() {
   double ar = 1.0, br = 2.0, cr = 1.0;
   double ae = 2.0, be = -1.0, ce = 5.0;
   int N = 100;
-  double w_sigma = 1.0;
-  double inv_sigma = 1.0 / w_sigma;
   cv::RNG rng;
 
   std::vector<double> x_data, y_data;
   for (int i = 0; i < N; i++) {
     double x = i / 100.0;
     x_data.push_back(x);
-    y_data.push_back(exp(ar * x * x + br * x + cr) +
-                     rng.gaussian(w_sigma * w_sigma));
+    y_data.push_back(std::exp(ar * x * x + br * x + cr) + rng.gaussian(1.0));
   }
 
   // Each error term has an optimized variable dimension of 3 and
@@ -73,9 +70,11 @@ int main() {
   typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType>
       LinearSolverType;
 
+  // Optimization algorithm
   g2o::OptimizationAlgorithmLevenberg *solver =
       new g2o::OptimizationAlgorithmLevenberg(g2o::make_unique<BlockSolverType>(
           g2o::make_unique<LinearSolverType>()));
+
   // graph model
   g2o::SparseOptimizer optimizer;
   optimizer.setVerbose(true);
@@ -94,8 +93,7 @@ int main() {
     edge->setId(i);
     edge->setVertex(0, v);
     edge->setMeasurement(y_data[i]);
-    edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity() * 1 /
-                         (w_sigma * w_sigma));
+    edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
     optimizer.addEdge(edge);
   }
 
